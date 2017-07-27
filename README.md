@@ -5,7 +5,9 @@
 - Установить Python 3.5.x (3.6 не поддерживается модулем pymssql)
 - Загрузить пакеты `pymssql`, `json`, `requests`, `PyQT5`. В командной строке выполнить:
 
-```pip install pymssql json requests PyQT5```
+```
+pip install pymssql json requests PyQT5
+```
 - Скачать оба файла из репозитория (`reqScriptGUI.py` и `script.conf`) и разместить их в одной директории (желательно, чтобы в пути присутствовали только символы стандартной ASCII таблицы)
 - В файле `reqScriptGUI.py` внести путь до файла `script.conf`:
 
