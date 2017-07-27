@@ -21,7 +21,7 @@
 	   "login":"dco",               # ЛОГИН DCO
 	   "password":"dco123"          # ПАРОЛЬ DCO
  ```
-   А так же:
+   А также:
  ```json
        "sqlServerIP":"WINSERVER\\SQLSERVER", # ИМЯ_КОМПЬЮТЕРА\\MSSQL_СЕРВЕР
 	   "dbName":"dco-db",                    # ИМЯ БД
