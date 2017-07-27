@@ -13,7 +13,7 @@ pip install pymssql json requests PyQT5
 
 ```python
     def dbUpdateProc(self):
-        conf_file = open('/home/apc/pyDCO2MSSQL/script.conf') #ЗДЕСЬ ВАШ ПУТЬ ДО script.conf
+        conf_file = open('/SOME/CUSTOM/PATH/TO/script.conf') #ЗДЕСЬ ВАШ ПУТЬ ДО script.conf
         config = json.load(conf_file)
         conf_file.close()
  ```
