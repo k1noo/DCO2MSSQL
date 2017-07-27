@@ -41,3 +41,12 @@ pip install pymssql json requests PyQT5
 ```
     скрипт будет повторять опрос БД. 
 - `Quit` останавливает опрос и закрывает скрипт.
+
+## Возможные проблемы:
+- При ошибке во время установки пакета `pymssql` на macOS, выполнить:
+```
+brew install freetds@0.91
+brew link --force freetds@0.91
+pip install pymssql
+```
+- При ошибке запуска на Windows добавить переменную окружения `QT_QPA_PLATFORM_PLUGIN_PATH` с путем до папки с `qwindows.dll`
