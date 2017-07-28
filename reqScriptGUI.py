@@ -8,12 +8,10 @@ from PyQt5.QtCore import QCoreApplication
 
 
 class DcoToMssql(QWidget):
-
     def __init__(self):
         super().__init__()
 
         self.initUI()
-
 
     def initUI(self):
 
@@ -27,52 +25,75 @@ class DcoToMssql(QWidget):
         dbUpdBtn.resize(dbUpdBtn.sizeHint())
         dbUpdBtn.move(50, 50)
 
-
         self.setGeometry(300, 300, 250, 150)
         self.setWindowTitle('pyDCO2MSSQL')
         self.show()
 
     def dbUpdateProc(self):
-        conf_file = open('/SOME/CUSTOM/PATH/TO/script.conf')
+        conf_file = open('SOME/PATH/TO/script.conf')
         config = json.load(conf_file)
         conf_file.close()
 
-        sqlconnect = pymssql.connect(config[1]['sqlServerIP'], config[1]['dbUser'], config[1]['dbPswd'], config[1]['dbName'])
+        sqlconnect = pymssql.connect(config[1]['sqlServerIP'], config[1]['dbUser'], config[1]['dbPswd'],
+                                     config[1]['dbName'])
         print("Connected to DB")
 
-        server_url = 'https://'+config[0]["login"]+':'+config[0]["password"]+'@'+config[0]["serverIP"]+'/api/current'
+        server_url = 'https://' + config[0]["login"] + ':' + config[0]["password"] + '@' + config[0][
+            "serverIP"] + '/api/current'
         request = '/work-orders'
 
         while True:
 
-            data = requests.get(server_url+request, verify=False).json()
-            print("Send request " + request +" to "+ server_url)
-            print("Got response with "+str(len(data)) + " items")
+            data = requests.get(server_url + request, verify=False).json()
+            print("Send request " + request + " to " + server_url)
+            print("Got response with " + str(len(data)) + " items")
 
             cursor = sqlconnect.cursor()
 
             for elem in data:
-                sqlCommand = 'SELECT * FROM '+config[1]['tables']['WorkOrder']+' WHERE id=\''+elem['id']+'\''
+                sqlCommand = 'SELECT * FROM ' + config[1]['tables']['WorkOrder'] + ' WHERE id=\'' + elem['id'] + '\''
                 cursor.execute(sqlCommand)
                 row = cursor.fetchone()
                 if row is None:
-                    sqlCommand = 'INSERT INTO ' + config[1]['tables']['WorkOrder'] + ' (id) VALUES (\'' + elem['id'] + '\')'
+                    sqlCommand = 'INSERT INTO ' + config[1]['tables']['WorkOrder'] + ' (id) VALUES (\'' + elem[
+                        'id'] + '\')'
                     cursor.execute(sqlCommand)
                     sqlconnect.commit()
 
             for elem in data:
                 for field in elem:
                     if field == 'assignedToGroup':
-                        continue
+                        if elem.get(field) is not None:
+                            print(elem[field])
+                            sqlCommand = 'UPDATE ' + config[1]['tables']['WorkOrder'] + ' SET ' + field + '=\'' + str(
+                                elem[field]['id']) + '\' WHERE id=\'' + elem['id'] + '\''
+                            print('Trying to execute: ' + sqlCommand)
+                            cursor.execute(sqlCommand)
+                            sqlconnect.commit()
+                            print('OK!')
+                            self.subTableEdit(config[1]['tables']['AssignedToGroup'], sqlconnect, cursor,
+                                              elem[field]['id'], 'id', config, elem[field])
+
                     elif field == 'assignedTo':
-                        continue
+                        if elem.get(field) is not None:
+                            print(elem[field])
+                            sqlCommand = 'UPDATE ' + config[1]['tables']['WorkOrder'] + ' SET ' + field + '=\'' + str(
+                                elem[field]['userName']) + '\' WHERE id=\'' + elem['id'] + '\''
+                            print('Trying to execute: ' + sqlCommand)
+                            cursor.execute(sqlCommand)
+                            sqlconnect.commit()
+                            print('OK!')
+                            self.subTableEdit(config[1]['tables']['AssignedTo'], sqlconnect, cursor,
+                                              elem[field]['userName'], 'userName', config, elem[field])
+
                     elif field == 'tasks':
                         continue
                     elif field == 'locked':
                         value = 0
                         if str(elem[field]) == 'true':
                             value = 1
-                        sqlCommand = 'UPDATE '+config[1]['tables']['WorkOrder']+' SET '+field+'=' +str(value)+' WHERE id=\''+elem['id']
+                        sqlCommand = 'UPDATE ' + config[1]['tables']['WorkOrder'] + ' SET ' + field + '=' + str(
+                            value) + ' WHERE id=\'' + elem['id']
                         sqlCommand += '\''
                         print('Trying to execute: ' + sqlCommand)
                         cursor.execute(sqlCommand)
@@ -81,30 +102,49 @@ class DcoToMssql(QWidget):
                     elif field == 'projectCode':
                         continue
                     elif 'Date' in field and elem[field] is not None:
-                        sqlCommand = 'UPDATE '+config[1]['tables']['WorkOrder']+' SET '+field+'=\''
-                        sqlCommand += str(datetime.fromtimestamp((int(elem[field])//1000)))+'\' WHERE id=\''+elem['id']
+                        sqlCommand = 'UPDATE ' + config[1]['tables']['WorkOrder'] + ' SET ' + field + '=\''
+                        sqlCommand += str(datetime.fromtimestamp((int(elem[field]) // 1000))) + '\' WHERE id=\'' + elem[
+                            'id']
                         sqlCommand += '\''
-                        print("Trying to execute: "+ sqlCommand)
+                        print("Trying to execute: " + sqlCommand)
                         cursor.execute(sqlCommand)
                         sqlconnect.commit()
                         print("OK!")
                     else:
-                        sqlCommand = 'UPDATE '+config[1]['tables']['WorkOrder']+' SET '+field+'=\''+str(elem[field])+'\' WHERE id=\''+elem['id']
+                        sqlCommand = 'UPDATE ' + config[1]['tables']['WorkOrder'] + ' SET ' + field + '=\'' + str(
+                            elem[field]) + '\' WHERE id=\'' + elem['id']
                         sqlCommand += '\''
-                        print("Trying to execute: "+sqlCommand)
+                        print("Trying to execute: " + sqlCommand)
                         cursor.execute(sqlCommand)
                         sqlconnect.commit()
                         print("OK!")
 
-
             print("DB updated!")
-            time.sleep(5)
+            time.sleep(600)
         sqlconnect.close()
 
     def startProc(self):
         thread = threading.Thread(target=self.dbUpdateProc, daemon=True)
         thread.start()
-		    
+
+    def subTableEdit(self, tableName, sqlconnect, cursor, uniqVal, uniqField, config, elem):
+        sqlCommand = 'SELECT * FROM ' + tableName + ' WHERE '+uniqField+'=\'' + uniqVal + '\''
+        print('Trying to execute: ' + sqlCommand)
+        cursor.execute(sqlCommand)
+        print("OK!")
+        row = cursor.fetchone()
+        if row is None:
+            sqlCommand = 'INSERT INTO ' + tableName + ' (' +uniqField+  ') VALUES (\'' + uniqVal+ '\')'
+            print('Trying to execute: ' + sqlCommand)
+            cursor.execute(sqlCommand)
+            sqlconnect.commit()
+            print("OK!")
+        for field in config[2][tableName]:
+            sqlCommand = 'UPDATE ' + tableName + ' SET ' + field + '=\'' + str(
+                elem[field]) + '\' WHERE '+ uniqField+'=\'' + uniqVal + '\''
+            print("Trying to execute: " + sqlCommand)
+            cursor.execute(sqlCommand)
+            sqlconnect.commit()
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
