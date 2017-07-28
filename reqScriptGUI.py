@@ -30,7 +30,7 @@ class DcoToMssql(QWidget):
         self.show()
 
     def dbUpdateProc(self):
-        conf_file = open('SOME/PATH/TO/script.conf')
+        conf_file = open('SOME/CUSTOM/PATH/TO/script.conf')
         config = json.load(conf_file)
         conf_file.close()
 
